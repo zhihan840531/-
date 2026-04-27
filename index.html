@@ -1,321 +1,259 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#c47f2e"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="維修管理"/>
 <title>維修管理系統</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-  :root {
-    --bg: #f7f5f2;
-    --surface: #ffffff;
-    --surface2: #f0ede8;
-    --border: #e2ddd8;
-    --text: #1a1714;
-    --text2: #6b6560;
-    --text3: #9e9890;
-    --accent: #c9913a;
-    --accent-bg: #fdf3e3;
-    --accent-hover: #b07e2e;
-    --danger: #c0392b;
-    --success: #27a469;
-    --profit-pos: #27a469;
-    --profit-neg: #c0392b;
-    --radius: 12px;
-    --radius-sm: 8px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Noto Sans TC', 'PingFang TC', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+:root{
+  --bg:#f5f3ef;--surface:#fff;--surface2:#eeebe5;--border:#dedad3;
+  --text:#1c1a17;--text2:#6b6560;--text3:#a09a93;
+  --accent:#c47f2e;--accent2:#a86a20;--accent-bg:#fdf4e7;
+  --red:#c0392b;--green:#27a469;--r:10px;--rs:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC','PingFang TC',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px;}
 
-  /* ── Setup screen ── */
-  #setup-screen {
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 2rem;
-  }
-  .setup-card {
-    background: var(--surface); border-radius: var(--radius);
-    border: 1px solid var(--border); padding: 2rem;
-    width: 100%; max-width: 460px;
-  }
-  .setup-card h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.4rem; }
-  .setup-card p { color: var(--text2); font-size: 0.9rem; margin-bottom: 1.5rem; }
-  .field { margin-bottom: 1rem; }
-  .field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 0.35rem; }
-  .field input {
-    width: 100%; padding: 0.6rem 0.8rem; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); font-size: 0.9rem; color: var(--text);
-    background: var(--surface); outline: none; transition: border 0.15s;
-  }
-  .field input:focus { border-color: var(--accent); }
-  .btn-primary {
-    width: 100%; padding: 0.7rem; background: var(--accent); color: #fff;
-    border: none; border-radius: var(--radius-sm); font-size: 0.95rem;
-    font-weight: 600; cursor: pointer; transition: background 0.15s;
-  }
-  .btn-primary:hover { background: var(--accent-hover); }
-  .setup-note { font-size: 0.78rem; color: var(--text3); margin-top: 1rem; text-align: center; }
+/* ── Setup ── */
+#setup{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1.5rem;}
+.setup-card{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:2rem;width:100%;max-width:440px;}
+.setup-logo{display:flex;align-items:center;gap:.6rem;margin-bottom:.5rem;}
+.setup-icon{width:36px;height:36px;background:var(--accent);border-radius:9px;display:flex;align-items:center;justify-content:center;}
+.setup-icon svg{width:20px;height:20px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.setup-title{font-size:1.2rem;font-weight:800;}
+.setup-desc{color:var(--text2);font-size:.85rem;margin:.8rem 0 1.5rem;line-height:1.6;}
+.sfield{margin-bottom:.9rem;}
+.sfield label{display:block;font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:.3rem;}
+.sfield input{width:100%;padding:.55rem .75rem;border:1px solid var(--border);border-radius:var(--rs);font-size:.88rem;color:var(--text);background:var(--surface);outline:none;transition:border .15s;}
+.sfield input:focus{border-color:var(--accent);}
+.sfield .hint{font-size:.72rem;color:var(--text3);margin-top:.25rem;}
+.connect-btn{width:100%;padding:.72rem;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:.95rem;font-weight:700;cursor:pointer;margin-top:.4rem;transition:background .15s;}
+.connect-btn:hover{background:var(--accent2);}
+.setup-note{font-size:.75rem;color:var(--text3);text-align:center;margin-top:1rem;line-height:1.5;}
+.setup-sql{background:var(--surface2);border-radius:var(--rs);padding:.75rem;margin-top:1.2rem;font-size:.75rem;color:var(--text2);line-height:1.7;}
+.setup-sql strong{color:var(--text);display:block;margin-bottom:.3rem;}
+.setup-sql code{font-family:monospace;font-size:.72rem;color:var(--accent2);}
 
-  /* ── App ── */
-  #app { display: none; }
-  header {
-    background: var(--surface); border-bottom: 1px solid var(--border);
-    padding: 0 1rem; height: 56px; display: flex; align-items: center;
-    justify-content: space-between; position: sticky; top: 0; z-index: 100;
-  }
-  .header-title { font-size: 1.05rem; font-weight: 700; }
-  .header-right { display: flex; gap: 0.5rem; align-items: center; }
+/* ── App ── */
+#app{display:none;}
+header{background:var(--surface);border-bottom:1px solid var(--border);height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1rem;position:sticky;top:0;z-index:100;}
+.logo{font-size:1rem;font-weight:800;display:flex;align-items:center;gap:.5rem;}
+.logo-icon{width:28px;height:28px;background:var(--accent);border-radius:7px;display:flex;align-items:center;justify-content:center;}
+.logo-icon svg{width:16px;height:16px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+.hright{display:flex;align-items:center;gap:.5rem;}
+.reset-btn{width:36px;height:36px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.reset-btn svg{width:16px;height:16px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.new-btn{height:38px;padding:0 .9rem;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:.88rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:.3rem;transition:background .15s;}
+.new-btn:hover{background:var(--accent2);}
+.new-btn svg{width:15px;height:15px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;}
+main{max-width:720px;margin:0 auto;padding:1rem 1rem 6rem;}
 
-  main { max-width: 780px; margin: 0 auto; padding: 1rem; }
+/* ── toolbar ── */
+.toolbar{display:flex;gap:.5rem;margin-bottom:1rem;flex-wrap:wrap;}
+.search-wrap{position:relative;flex:1;min-width:160px;}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;stroke:var(--text3);fill:none;stroke-width:2;stroke-linecap:round;pointer-events:none;}
+.search-input{width:100%;height:42px;padding:0 .8rem 0 2.1rem;border:1px solid var(--border);border-radius:var(--rs);font-size:.88rem;color:var(--text);background:var(--surface);outline:none;transition:border .15s;}
+.search-input:focus{border-color:var(--accent);}
+.icon-btn{width:42px;height:42px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;flex-shrink:0;position:relative;}
+.icon-btn:hover{background:var(--surface2);}
+.icon-btn svg{width:16px;height:16px;stroke:var(--text2);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+.f-badge{position:absolute;top:-5px;right:-5px;width:17px;height:17px;border-radius:50%;background:var(--accent);color:#fff;font-size:9px;font-weight:800;display:none;align-items:center;justify-content:center;}
 
-  /* toolbar */
-  .toolbar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-  .search-wrap { position: relative; flex: 1; min-width: 180px; }
-  .search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); }
-  .search-input {
-    width: 100%; padding: 0.6rem 0.8rem 0.6rem 2.2rem;
-    border: 1px solid var(--border); border-radius: var(--radius-sm);
-    font-size: 0.9rem; color: var(--text); background: var(--surface);
-    outline: none; transition: border 0.15s; height: 42px;
-  }
-  .search-input:focus { border-color: var(--accent); }
-  .icon-btn {
-    width: 42px; height: 42px; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); background: var(--surface);
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; transition: background 0.15s; flex-shrink: 0;
-    position: relative;
-  }
-  .icon-btn:hover { background: var(--surface2); }
-  .icon-btn svg { width: 16px; height: 16px; stroke: var(--text2); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-  .badge {
-    position: absolute; top: -6px; right: -6px; width: 18px; height: 18px;
-    border-radius: 50%; background: var(--accent); color: #fff;
-    font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700;
-  }
-  .new-btn {
-    height: 42px; padding: 0 0.9rem; background: var(--accent); color: #fff;
-    border: none; border-radius: var(--radius-sm); font-size: 0.88rem;
-    font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 0.3rem;
-    transition: background 0.15s; white-space: nowrap;
-  }
-  .new-btn:hover { background: var(--accent-hover); }
+/* ── stats ── */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1rem;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.85rem 1rem;}
+.stat-label{font-size:.72rem;color:var(--text2);margin-bottom:.2rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;}
+.stat-value{font-size:1.5rem;font-weight:800;}
 
-  /* stats */
-  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
-  .stat-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 0.85rem 1rem;
-  }
-  .stat-label { font-size: 0.75rem; color: var(--text2); margin-bottom: 0.25rem; }
-  .stat-value { font-size: 1.4rem; font-weight: 700; }
+/* ── cards ── */
+.card-list{display:flex;flex-direction:column;gap:.5rem;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:.9rem 1rem;cursor:pointer;transition:border-color .15s,transform .1s;display:flex;justify-content:space-between;gap:.75rem;align-items:flex-start;}
+.card:hover{border-color:var(--accent);}
+.card:active{transform:scale(.99);}
+.card-left{flex:1;min-width:0;}
+.name-row{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;}
+.c-name{font-weight:700;font-size:.95rem;}
+.c-phone{font-size:.78rem;color:var(--text2);}
+.c-sub{font-size:.81rem;color:var(--text2);margin-top:.15rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.c-meta{display:flex;align-items:center;gap:.4rem;margin-top:.5rem;flex-wrap:wrap;}
+.c-date{font-size:.75rem;color:var(--text3);}
+.c-right{text-align:right;flex-shrink:0;}
+.c-price{font-size:.9rem;font-weight:700;}
+.c-profit{font-size:.76rem;}
+.pos{color:var(--green);} .neg{color:var(--red);}
+.sb{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.7rem;font-weight:700;}
+.s-pending{background:#fef3cd;color:#7d5a00;}
+.s-repairing{background:#d1ecf1;color:#0c5460;}
+.s-done{background:#d4edda;color:#155724;}
+.s-delivered{background:#e2e3e5;color:#383d41;}
+.s-cancelled{background:#f8d7da;color:#721c24;}
+.empty{text-align:center;padding:3rem 1rem;color:var(--text2);}
+.loading{text-align:center;padding:3rem 1rem;color:var(--text3);font-size:.9rem;}
 
-  /* list */
-  .repair-list { display: flex; flex-direction: column; gap: 0.5rem; }
-  .repair-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius); padding: 1rem;
-    cursor: pointer; transition: border-color 0.15s, transform 0.1s;
-    display: flex; justify-content: space-between; gap: 1rem; align-items: flex-start;
-  }
-  .repair-card:hover { border-color: var(--accent); }
-  .repair-card:active { transform: scale(0.99); }
-  .card-left { flex: 1; min-width: 0; }
-  .card-name { font-weight: 600; font-size: 0.95rem; }
-  .card-phone { font-size: 0.8rem; color: var(--text2); }
-  .card-sub { font-size: 0.82rem; color: var(--text2); margin-top: 0.2rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-meta { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
-  .card-right { text-align: right; flex-shrink: 0; }
-  .card-price { font-size: 0.9rem; font-weight: 600; }
-  .card-profit { font-size: 0.78rem; }
-  .pos { color: var(--profit-pos); }
-  .neg { color: var(--profit-neg); }
+/* ── FAB ── */
+.fab{position:fixed;bottom:1.5rem;right:1.2rem;width:50px;height:50px;border-radius:50%;background:var(--accent);color:#fff;border:none;font-size:1.5rem;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.16);transition:background .15s,transform .1s;z-index:50;}
+.fab:hover{background:var(--accent2);} .fab:active{transform:scale(.95);}
 
-  .status-badge {
-    display: inline-block; padding: 2px 8px; border-radius: 99px;
-    font-size: 0.72rem; font-weight: 600;
-  }
-  .s-pending   { background: #fef3cd; color: #7d5a00; }
-  .s-repairing { background: #d1ecf1; color: #0c5460; }
-  .s-done      { background: #d4edda; color: #155724; }
-  .s-delivered { background: #e2e3e5; color: #383d41; }
-  .s-cancelled { background: #f8d7da; color: #721c24; }
+/* ── drawer ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;}
+.overlay.open{display:block;}
+.drawer{position:fixed;bottom:0;left:0;right:0;background:var(--surface);border-radius:18px 18px 0 0;padding:1.25rem 1.25rem 2.5rem;z-index:201;transform:translateY(100%);transition:transform .25s ease;max-height:85vh;overflow-y:auto;}
+.drawer.open{transform:translateY(0);}
+.drawer-title{font-size:1rem;font-weight:800;margin-bottom:1.1rem;}
+.frow{margin-bottom:.85rem;}
+.frow label{display:block;font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:.3rem;}
+.frow select,.frow input[type=date]{width:100%;padding:.5rem .7rem;border:1px solid var(--border);border-radius:var(--rs);font-size:.88rem;color:var(--text);background:var(--surface);outline:none;}
+.date-grid{display:grid;grid-template-columns:1fr 1fr;gap:.6rem;}
+.clear-btn{width:100%;padding:.6rem;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface);font-size:.88rem;color:var(--text2);cursor:pointer;margin-top:.4rem;}
+.clear-btn:hover{background:var(--surface2);}
 
-  .empty { text-align: center; padding: 4rem 1rem; color: var(--text2); }
-  .loading { text-align: center; padding: 4rem 1rem; color: var(--text3); }
+/* ── modal ── */
+.modal-wrap{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:300;align-items:flex-end;justify-content:center;}
+@media(min-width:520px){.modal-wrap{align-items:center;padding:1rem;}.modal{border-radius:var(--r) !important;max-height:90vh !important;}}
+.modal-wrap.open{display:flex;}
+.modal{background:var(--surface);width:100%;max-width:500px;border-radius:18px 18px 0 0;max-height:92vh;overflow-y:auto;padding:1.25rem 1.25rem 2rem;}
+.mhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem;}
+.mtitle{font-size:1.05rem;font-weight:800;}
+.mclose{background:none;border:none;font-size:1.3rem;cursor:pointer;color:var(--text2);line-height:1;padding:.2rem;}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem;}
+.fgrid .full{grid-column:1/-1;}
+.ff label{display:block;font-size:.78rem;font-weight:700;color:var(--text2);margin-bottom:.28rem;}
+.ff input,.ff select{width:100%;padding:.52rem .7rem;border:1px solid var(--border);border-radius:var(--rs);font-size:.88rem;color:var(--text);background:var(--surface);outline:none;transition:border .15s;}
+.ff input:focus,.ff select:focus{border-color:var(--accent);}
+.mactions{display:flex;gap:.6rem;margin-top:1.1rem;}
+.btn-save{flex:1;padding:.65rem;background:var(--accent);color:#fff;border:none;border-radius:var(--rs);font-size:.9rem;font-weight:700;cursor:pointer;transition:background .15s;}
+.btn-save:hover{background:var(--accent2);}
+.btn-save:disabled{background:var(--text3);cursor:not-allowed;}
+.btn-del{padding:.65rem .9rem;background:none;color:var(--red);border:1px solid var(--red);border-radius:var(--rs);font-size:.9rem;cursor:pointer;}
+.btn-del:hover{background:#fdecea;}
+.form-note{font-size:.78rem;color:var(--text3);margin-top:.5rem;text-align:center;}
 
-  /* FAB */
-  .fab {
-    position: fixed; bottom: 1.5rem; right: 1.5rem;
-    width: 52px; height: 52px; border-radius: 50%;
-    background: var(--accent); color: #fff; border: none;
-    font-size: 1.5rem; display: flex; align-items: center; justify-content: center;
-    cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    transition: background 0.15s, transform 0.1s; z-index: 50;
-  }
-  .fab:hover { background: var(--accent-hover); }
-  .fab:active { transform: scale(0.95); }
-
-  /* ── Filter panel ── */
-  .overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200;
-  }
-  .overlay.open { display: block; }
-  .filter-panel {
-    position: fixed; bottom: 0; left: 0; right: 0;
-    background: var(--surface); border-radius: 18px 18px 0 0;
-    padding: 1.25rem 1.25rem 2rem; z-index: 201;
-    transform: translateY(100%); transition: transform 0.25s ease;
-    max-height: 90vh; overflow-y: auto;
-  }
-  .filter-panel.open { transform: translateY(0); }
-  .panel-title { font-size: 1rem; font-weight: 700; margin-bottom: 1.25rem; }
-  .filter-row { margin-bottom: 1rem; }
-  .filter-row label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 0.35rem; }
-  .filter-row select, .filter-row input[type=date] {
-    width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--text);
-    background: var(--surface); outline: none;
-  }
-  .date-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .clear-btn {
-    width: 100%; padding: 0.65rem; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); background: var(--surface);
-    font-size: 0.88rem; color: var(--text2); cursor: pointer; margin-top: 0.5rem;
-  }
-  .clear-btn:hover { background: var(--surface2); }
-
-  /* ── Modal (新增/編輯) ── */
-  .modal-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300;
-    align-items: center; justify-content: center; padding: 1rem;
-  }
-  .modal-overlay.open { display: flex; }
-  .modal {
-    background: var(--surface); border-radius: var(--radius);
-    width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
-    padding: 1.5rem;
-  }
-  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; }
-  .modal-title { font-size: 1.1rem; font-weight: 700; }
-  .modal-close { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text2); padding: 0.25rem; }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
-  .form-grid .full { grid-column: 1 / -1; }
-  .form-field label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 0.3rem; }
-  .form-field input, .form-field select {
-    width: 100%; padding: 0.55rem 0.75rem; border: 1px solid var(--border);
-    border-radius: var(--radius-sm); font-size: 0.88rem; color: var(--text);
-    background: var(--surface); outline: none; transition: border 0.15s;
-  }
-  .form-field input:focus, .form-field select:focus { border-color: var(--accent); }
-  .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.25rem; }
-  .btn-save {
-    flex: 1; padding: 0.7rem; background: var(--accent); color: #fff;
-    border: none; border-radius: var(--radius-sm); font-size: 0.9rem;
-    font-weight: 600; cursor: pointer; transition: background 0.15s;
-  }
-  .btn-save:hover { background: var(--accent-hover); }
-  .btn-delete {
-    padding: 0.7rem 1rem; background: none; color: var(--danger);
-    border: 1px solid var(--danger); border-radius: var(--radius-sm);
-    font-size: 0.9rem; cursor: pointer; transition: background 0.15s;
-  }
-  .btn-delete:hover { background: #fdecea; }
-
-  /* ── Toast ── */
-  #toast-container { position: fixed; bottom: 5rem; left: 50%; transform: translateX(-50%); z-index: 999; display: flex; flex-direction: column; gap: 0.5rem; align-items: center; }
-  .toast {
-    background: #1a1714; color: #fff; padding: 0.6rem 1.2rem;
-    border-radius: 99px; font-size: 0.88rem; font-weight: 500;
-    animation: fadeup 0.25s ease; white-space: nowrap;
-  }
-  .toast.error { background: var(--danger); }
-  @keyframes fadeup { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+/* ── toast ── */
+#toasts{position:fixed;bottom:5rem;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:.4rem;align-items:center;pointer-events:none;}
+.toast{background:#1c1a17;color:#fff;padding:.5rem 1.1rem;border-radius:99px;font-size:.85rem;font-weight:600;animation:fup .22s ease;white-space:nowrap;}
+.toast.err{background:var(--red);} .toast.ok{background:var(--green);}
+@keyframes fup{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 </style>
 </head>
 <body>
 
-<!-- ── Setup screen ── -->
-<div id="setup-screen">
+<!-- ── Setup ── -->
+<div id="setup">
   <div class="setup-card">
-    <h1>🔧 維修管理系統</h1>
-    <p>請填入你的 Supabase 連線資訊，設定完成後會自動記住。</p>
-    <div class="field">
-      <label>Supabase URL</label>
-      <input id="sb-url" type="text" placeholder="https://xxxx.supabase.co" />
+    <div class="setup-logo">
+      <div class="setup-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      <span class="setup-title">維修管理系統</span>
     </div>
-    <div class="field">
+    <p class="setup-desc">請填入 Supabase 連線資訊。設定完成後會自動記住，之後開啟直接使用。</p>
+    <div class="sfield">
+      <label>Supabase Project URL</label>
+      <input id="sb-url" type="url" placeholder="https://xxxxxxxx.supabase.co" autocomplete="off"/>
+      <div class="hint">Supabase → Project Settings → API → Project URL</div>
+    </div>
+    <div class="sfield">
       <label>Supabase Anon Key</label>
-      <input id="sb-key" type="text" placeholder="eyJhbGci..." />
+      <input id="sb-key" type="text" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." autocomplete="off"/>
+      <div class="hint">同頁面的 anon public key</div>
     </div>
-    <button class="btn-primary" onclick="connect()">連線並開始使用</button>
-    <p class="setup-note">資訊僅儲存在你的瀏覽器（localStorage），不會上傳。</p>
+    <button class="connect-btn" onclick="connect()">連線並開始使用</button>
+    <p class="setup-note">🔒 連線資訊只存在這台設備的瀏覽器，不會上傳給任何人</p>
+    <div class="setup-sql">
+      <strong>⚙️ 首次使用？請先在 Supabase SQL Editor 執行：</strong>
+      <code>create table repairs (
+  id uuid default gen_random_uuid() primary key,
+  created_at timestamptz default now(),
+  customer_name text, phone text, brand text,
+  model text, color text, capacity text, imei text,
+  repair_item text, repair_date date, status text default 'pending',
+  price numeric default 0, cost numeric default 0,
+  is_deleted boolean default false
+);
+alter table repairs enable row level security;
+create policy "allow all" on repairs for all using (true) with check (true);</code>
+    </div>
   </div>
 </div>
 
 <!-- ── App ── -->
 <div id="app">
   <header>
-    <div class="header-title">🔧 維修記錄</div>
-    <div class="header-right">
-      <button class="new-btn" onclick="openForm()">＋ 新增</button>
+    <div class="logo">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+      </div>
+      維修管理系統
+    </div>
+    <div class="hright">
+      <div class="reset-btn" onclick="resetConn()" title="重設連線">
+        <svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+      </div>
+      <button class="new-btn" onclick="openForm()">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        新增
+      </button>
     </div>
   </header>
 
   <main>
     <div class="toolbar">
       <div class="search-wrap">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9e9890" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        <input class="search-input" id="search" placeholder="搜尋姓名、電話、項目…" oninput="renderList()" />
+        <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="search-input" id="q" placeholder="搜尋姓名、電話、維修項目…" oninput="render()"/>
       </div>
-      <div class="icon-btn" onclick="toggleFilter()" title="篩選">
+      <div class="icon-btn" onclick="openDrawer()" title="篩選">
         <svg viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-        <span class="badge" id="filter-badge" style="display:none">0</span>
+        <span class="f-badge" id="fbadge">0</span>
       </div>
       <div class="icon-btn" onclick="backup()" title="備份 Excel">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       </div>
-      <div class="icon-btn" onclick="document.getElementById('file-input').click()" title="還原 Excel">
+      <div class="icon-btn" onclick="document.getElementById('fi').click()" title="從 Excel 還原">
         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
-      <input id="file-input" type="file" accept=".xlsx" style="display:none" onchange="restore(event)" />
+      <input id="fi" type="file" accept=".xlsx" style="display:none" onchange="restore(event)"/>
     </div>
 
     <div class="stats">
-      <div class="stat-card">
+      <div class="stat">
         <div class="stat-label">筆數</div>
-        <div class="stat-value" id="stat-count">0</div>
+        <div class="stat-value" id="scount">0</div>
       </div>
-      <div class="stat-card">
+      <div class="stat">
         <div class="stat-label">總利潤</div>
-        <div class="stat-value" id="stat-profit">NT$0</div>
+        <div class="stat-value" id="sprofit">NT$0</div>
       </div>
     </div>
 
-    <div id="list-area"><div class="loading">載入中…</div></div>
+    <div id="list"><div class="loading">載入中…</div></div>
   </main>
 
-  <button class="fab" onclick="openForm()" title="新增維修">＋</button>
+  <button class="fab" onclick="openForm()">＋</button>
 </div>
 
-<!-- ── Filter panel ── -->
-<div class="overlay" id="overlay" onclick="toggleFilter()"></div>
-<div class="filter-panel" id="filter-panel">
-  <div class="panel-title">篩選</div>
-  <div class="filter-row">
-    <label>品牌</label>
-    <select id="f-brand" onchange="renderList()">
+<!-- filter drawer -->
+<div class="overlay" id="ov" onclick="closeDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-title">篩選</div>
+  <div class="frow"><label>品牌</label>
+    <select id="fb" onchange="render()">
       <option value="">全部品牌</option>
       <option value="apple">Apple</option>
       <option value="samsung">Samsung</option>
       <option value="oppo">OPPO</option>
       <option value="xiaomi">小米</option>
-      <option value="other">其他</option>
+      <option value="other">其他品牌</option>
     </select>
   </div>
-  <div class="filter-row">
-    <label>狀態</label>
-    <select id="f-status" onchange="renderList()">
+  <div class="frow"><label>狀態</label>
+    <select id="fs" onchange="render()">
       <option value="">全部狀態</option>
       <option value="pending">待維修</option>
       <option value="repairing">維修中</option>
@@ -324,63 +262,52 @@
       <option value="cancelled">已取消</option>
     </select>
   </div>
-  <div class="filter-row">
-    <div class="date-row">
-      <div>
-        <label>起始日期</label>
-        <input type="date" id="f-from" onchange="renderList()" />
-      </div>
-      <div>
-        <label>結束日期</label>
-        <input type="date" id="f-to" onchange="renderList()" />
-      </div>
+  <div class="frow">
+    <div class="date-grid">
+      <div><label>起始日期</label><input type="date" id="ffrom" onchange="render()"/></div>
+      <div><label>結束日期</label><input type="date" id="fto" onchange="render()"/></div>
     </div>
   </div>
-  <button class="clear-btn" onclick="clearFilters()">✕ 清除篩選</button>
+  <button class="clear-btn" onclick="clearF()">✕ 清除篩選</button>
 </div>
 
-<!-- ── Form Modal ── -->
-<div class="modal-overlay" id="modal">
+<!-- form modal -->
+<div class="modal-wrap" id="modal">
   <div class="modal">
-    <div class="modal-header">
-      <div class="modal-title" id="modal-title">新增維修</div>
-      <button class="modal-close" onclick="closeForm()">✕</button>
+    <div class="mhead">
+      <div class="mtitle" id="mtitle">新增維修</div>
+      <button class="mclose" onclick="closeForm()">✕</button>
     </div>
-    <input type="hidden" id="form-id" />
-    <div class="form-grid">
-      <div class="form-field full">
-        <label>客戶名稱 *</label>
-        <input id="f-name" type="text" placeholder="王小明" />
-      </div>
-      <div class="form-field">
-        <label>電話 *</label>
-        <input id="f-phone" type="text" placeholder="0912-345-678" />
-      </div>
-      <div class="form-field">
-        <label>品牌</label>
-        <select id="f-brand-form">
+    <input type="hidden" id="fid"/>
+    <div class="fgrid">
+      <div class="ff full"><label>客戶姓名 *</label><input id="fn" placeholder="王小明"/></div>
+      <div class="ff"><label>電話 *</label><input id="fph" placeholder="0912-345-678" inputmode="tel"/></div>
+      <div class="ff"><label>品牌</label>
+        <select id="fbr">
           <option value="apple">Apple</option>
           <option value="samsung">Samsung</option>
           <option value="oppo">OPPO</option>
           <option value="xiaomi">小米</option>
-          <option value="other">其他</option>
+          <option value="other">其他品牌</option>
         </select>
       </div>
-      <div class="form-field">
-        <label>型號</label>
-        <input id="f-model" type="text" placeholder="iPhone 15 Pro" />
+      <div class="ff"><label>型號</label><input id="fmo" placeholder="iPhone 15 Pro"/></div>
+      <div class="ff"><label>顏色</label><input id="fcol" placeholder="黑色、白色…"/></div>
+      <div class="ff"><label>容量</label>
+        <select id="fcap">
+          <option value="">不適用</option>
+          <option value="64G">64G</option>
+          <option value="128G">128G</option>
+          <option value="256G">256G</option>
+          <option value="512G">512G</option>
+          <option value="1T">1T</option>
+        </select>
       </div>
-      <div class="form-field full">
-        <label>維修項目 *</label>
-        <input id="f-item" type="text" placeholder="換螢幕" />
-      </div>
-      <div class="form-field">
-        <label>維修日期</label>
-        <input id="f-date" type="date" />
-      </div>
-      <div class="form-field">
-        <label>狀態</label>
-        <select id="f-status-form">
+      <div class="ff full"><label>IMEI</label><input id="fimei" placeholder="15 碼 IMEI 號碼" inputmode="numeric"/></div>
+      <div class="ff full"><label>維修項目 *</label><input id="fit" placeholder="換螢幕、換電池…"/></div>
+      <div class="ff"><label>維修日期</label><input type="date" id="fdt"/></div>
+      <div class="ff"><label>狀態</label>
+        <select id="fst">
           <option value="pending">待維修</option>
           <option value="repairing">維修中</option>
           <option value="done">已完成</option>
@@ -388,298 +315,295 @@
           <option value="cancelled">已取消</option>
         </select>
       </div>
-      <div class="form-field">
-        <label>售價 (NT$)</label>
-        <input id="f-price" type="number" placeholder="2500" min="0" />
-      </div>
-      <div class="form-field">
-        <label>成本 (NT$)</label>
-        <input id="f-cost" type="number" placeholder="800" min="0" />
-      </div>
+      <div class="ff"><label>售價（NT$）</label><input type="number" id="fpr" placeholder="2500" min="0" inputmode="numeric"/></div>
+      <div class="ff"><label>成本（NT$）</label><input type="number" id="fco" placeholder="800" min="0" inputmode="numeric"/></div>
     </div>
-    <div class="modal-actions">
-      <button class="btn-delete" id="delete-btn" style="display:none" onclick="deleteRepair()">刪除</button>
-      <button class="btn-save" onclick="saveRepair()">儲存</button>
+    <div class="mactions">
+      <button class="btn-del" id="bdel" style="display:none" onclick="delRepair()">刪除</button>
+      <button class="btn-save" id="bsave" onclick="save()">儲存</button>
     </div>
+    <p class="form-note">* 為必填欄位</p>
   </div>
 </div>
 
-<div id="toast-container"></div>
+<div id="toasts"></div>
 
 <script>
-const BRAND_LABELS = { apple:'Apple', samsung:'Samsung', oppo:'OPPO', xiaomi:'小米', other:'其他' };
-const STATUS_LABELS = { pending:'待維修', repairing:'維修中', done:'已完成', delivered:'已取件', cancelled:'已取消' };
-const STATUS_CLASS  = { pending:'s-pending', repairing:'s-repairing', done:'s-done', delivered:'s-delivered', cancelled:'s-cancelled' };
-const BRAND_REVERSE  = Object.fromEntries(Object.entries(BRAND_LABELS).map(([k,v])=>[v,k]));
-const STATUS_REVERSE = Object.fromEntries(Object.entries(STATUS_LABELS).map(([k,v])=>[v,k]));
+const BRAND  = {apple:'Apple',samsung:'Samsung',oppo:'OPPO',xiaomi:'小米',other:'其他品牌'};
+const STATUS = {pending:'待維修',repairing:'維修中',done:'已完成',delivered:'已取件',cancelled:'已取消'};
+const SCLS   = {pending:'s-pending',repairing:'s-repairing',done:'s-done',delivered:'s-delivered',cancelled:'s-cancelled'};
+const BRAND_R  = Object.fromEntries(Object.entries(BRAND).map(([k,v])=>[v,k]));
+const STATUS_R = Object.fromEntries(Object.entries(STATUS).map(([k,v])=>[v,k]));
 
 let sb = null;
-let allRepairs = [];
+let allData = [];
 
-// ── Supabase 連線 ─────────────────────────────────────────
-function connect() {
+// ── 連線 ─────────────────────────────────────────────
+async function connect() {
   const url = document.getElementById('sb-url').value.trim();
   const key = document.getElementById('sb-key').value.trim();
-  if (!url || !key) { toast('請填入 URL 和 Key', true); return; }
+  if(!url || !key) { toast('請填入 URL 和 Key', true); return; }
+  const btn = document.querySelector('.connect-btn');
+  btn.textContent = '連線中…'; btn.disabled = true;
   localStorage.setItem('sb_url', url);
   localStorage.setItem('sb_key', key);
-  initApp(url, key);
+  await initApp(url, key);
+  btn.textContent = '連線並開始使用'; btn.disabled = false;
 }
 
-function initApp(url, key) {
+async function initApp(url, key) {
   sb = supabase.createClient(url, key);
-  document.getElementById('setup-screen').style.display = 'none';
+  const { error } = await sb.from('repairs').select('id').limit(1);
+  if(error) {
+    toast('連線失敗：' + error.message, true);
+    localStorage.removeItem('sb_url');
+    localStorage.removeItem('sb_key');
+    sb = null;
+    return;
+  }
+  document.getElementById('setup').style.display = 'none';
   document.getElementById('app').style.display = 'block';
   load();
 }
 
-// 自動讀取已儲存的設定
+function resetConn() {
+  if(!confirm('確定重設連線設定？')) return;
+  localStorage.removeItem('sb_url');
+  localStorage.removeItem('sb_key');
+  location.reload();
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   const url = localStorage.getItem('sb_url');
   const key = localStorage.getItem('sb_key');
-  if (url && key) {
+  if(url && key) {
     document.getElementById('sb-url').value = url;
     document.getElementById('sb-key').value = key;
     initApp(url, key);
   }
 });
 
-// ── 資料 ──────────────────────────────────────────────────
+// ── 資料 ─────────────────────────────────────────────
 async function load() {
-  document.getElementById('list-area').innerHTML = '<div class="loading">載入中…</div>';
+  document.getElementById('list').innerHTML = '<div class="loading">載入中…</div>';
   const { data, error } = await sb.from('repairs').select('*')
     .eq('is_deleted', false)
     .order('repair_date', { ascending: false })
     .order('created_at', { ascending: false });
-  if (error) { toast(error.message, true); return; }
-  allRepairs = data ?? [];
-  renderList();
+  if(error) { toast('讀取失敗：' + error.message, true); return; }
+  allData = data ?? [];
+  render();
 }
 
 function getFiltered() {
-  const q = document.getElementById('search').value.trim().toLowerCase();
-  const brand  = document.getElementById('f-brand').value;
-  const status = document.getElementById('f-status').value;
-  const from   = document.getElementById('f-from').value;
-  const to     = document.getElementById('f-to').value;
-  return allRepairs.filter(r => {
-    if (brand  && r.brand  !== brand)  return false;
-    if (status && r.status !== status) return false;
-    if (from   && r.repair_date < from) return false;
-    if (to     && r.repair_date > to)  return false;
-    if (q) {
-      const hay = `${r.customer_name} ${r.phone} ${r.repair_item} ${r.model??''} ${r.imei??''}`.toLowerCase();
-      if (!hay.includes(q)) return false;
+  const q   = document.getElementById('q').value.trim().toLowerCase();
+  const fb  = document.getElementById('fb').value;
+  const fs  = document.getElementById('fs').value;
+  const ffr = document.getElementById('ffrom').value;
+  const fto = document.getElementById('fto').value;
+  return allData.filter(r => {
+    if(fb  && r.brand  !== fb)  return false;
+    if(fs  && r.status !== fs)  return false;
+    if(ffr && r.repair_date < ffr) return false;
+    if(fto && r.repair_date > fto) return false;
+    if(q) {
+      const h = `${r.customer_name||''} ${r.phone||''} ${r.repair_item||''} ${r.model||''} ${r.imei||''} ${r.color||''}`.toLowerCase();
+      if(!h.includes(q)) return false;
     }
     return true;
   });
 }
 
-function renderList() {
+function render() {
   const list = getFiltered();
-  const totalProfit = list.reduce((s,r) => s + (Number(r.price)-Number(r.cost)), 0);
+  const profit = list.reduce((s,r) => s + (Number(r.price) - Number(r.cost)), 0);
+  document.getElementById('scount').textContent = list.length;
+  const pe = document.getElementById('sprofit');
+  pe.textContent = fmt(profit);
+  pe.className = 'stat-value ' + (profit >= 0 ? 'pos' : 'neg');
+  updateBadge();
 
-  document.getElementById('stat-count').textContent = list.length;
-  const profitEl = document.getElementById('stat-profit');
-  profitEl.textContent = fmt(totalProfit);
-  profitEl.className = 'stat-value ' + (totalProfit >= 0 ? 'pos' : 'neg');
-  updateFilterBadge();
-
-  const area = document.getElementById('list-area');
-  if (!list.length) {
-    area.innerHTML = '<div class="empty">尚無維修記錄</div>';
+  const el = document.getElementById('list');
+  if(!list.length) {
+    el.innerHTML = '<div class="empty">尚無維修記錄<br><span style="font-size:.82rem;color:var(--text3)">點右下角 ＋ 新增第一筆</span></div>';
     return;
   }
-
-  area.innerHTML = '<div class="repair-list">' +
-    list.map(r => {
-      const profit = Number(r.price) - Number(r.cost);
-      return `<div class="repair-card" onclick="openForm('${r.id}')">
-        <div class="card-left">
-          <div style="display:flex;gap:0.5rem;align-items:center">
-            <span class="card-name">${esc(r.customer_name)}</span>
-            <span class="card-phone">${esc(r.phone)}</span>
-          </div>
-          <div class="card-sub">${BRAND_LABELS[r.brand]??r.brand}${r.model?` · ${esc(r.model)}`:''} · ${esc(r.repair_item)}</div>
-          <div class="card-meta">
-            <span class="status-badge ${STATUS_CLASS[r.status]??''}">${STATUS_LABELS[r.status]??r.status}</span>
-            <span style="font-size:0.75rem;color:var(--text3)">${r.repair_date??''}</span>
-          </div>
+  el.innerHTML = '<div class="card-list">' + list.map(r => {
+    const p = Number(r.price) - Number(r.cost);
+    const sub = [BRAND[r.brand]||r.brand, r.model, r.color, r.capacity, r.imei ? 'IMEI:'+r.imei : null, r.repair_item]
+      .filter(Boolean).join(' · ');
+    return `<div class="card" onclick="openForm('${r.id}')">
+      <div class="card-left">
+        <div class="name-row"><span class="c-name">${esc(r.customer_name)}</span><span class="c-phone">${esc(r.phone)}</span></div>
+        <div class="c-sub">${esc(sub)}</div>
+        <div class="c-meta">
+          <span class="sb ${SCLS[r.status]||''}">${STATUS[r.status]||r.status}</span>
+          <span class="c-date">${r.repair_date||''}</span>
         </div>
-        <div class="card-right">
-          <div class="card-price">${fmt(Number(r.price))}</div>
-          <div class="card-profit ${profit>=0?'pos':'neg'}">${profit>=0?'+':''}${fmt(profit)}</div>
-        </div>
-      </div>`;
-    }).join('') + '</div>';
+      </div>
+      <div class="c-right">
+        <div class="c-price">${fmt(Number(r.price))}</div>
+        <div class="c-profit ${p>=0?'pos':'neg'}">${p>=0?'+':''}${fmt(p)}</div>
+      </div>
+    </div>`;
+  }).join('') + '</div>';
 }
 
-// ── Filter panel ──────────────────────────────────────────
-function toggleFilter() {
-  document.getElementById('overlay').classList.toggle('open');
-  document.getElementById('filter-panel').classList.toggle('open');
-}
-function clearFilters() {
-  ['f-brand','f-status','f-from','f-to'].forEach(id => document.getElementById(id).value = '');
-  renderList();
-}
-function updateFilterBadge() {
-  const count = ['f-brand','f-status','f-from','f-to'].filter(id => document.getElementById(id).value).length;
-  const badge = document.getElementById('filter-badge');
-  if (count) { badge.textContent = count; badge.style.display = 'flex'; }
-  else badge.style.display = 'none';
+function updateBadge() {
+  const n = ['fb','fs','ffrom','fto'].filter(id => document.getElementById(id).value).length;
+  const b = document.getElementById('fbadge');
+  b.textContent = n; b.style.display = n ? 'flex' : 'none';
 }
 
-// ── Form modal ────────────────────────────────────────────
+// ── drawer ───────────────────────────────────────────
+function openDrawer()  { document.getElementById('ov').classList.add('open'); document.getElementById('drawer').classList.add('open'); }
+function closeDrawer() { document.getElementById('ov').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); }
+function clearF() { ['fb','fs','ffrom','fto'].forEach(id => document.getElementById(id).value = ''); render(); }
+
+// ── form ─────────────────────────────────────────────
 function openForm(id) {
-  const modal = document.getElementById('modal');
-  modal.classList.add('open');
-  if (!id) {
-    document.getElementById('modal-title').textContent = '新增維修';
-    document.getElementById('form-id').value = '';
-    document.getElementById('delete-btn').style.display = 'none';
-    document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
-    ['f-name','f-phone','f-model','f-item'].forEach(i => document.getElementById(i).value = '');
-    document.getElementById('f-brand-form').value = 'apple';
-    document.getElementById('f-status-form').value = 'pending';
-    document.getElementById('f-price').value = '';
-    document.getElementById('f-cost').value = '';
+  document.getElementById('modal').classList.add('open');
+  if(!id) {
+    document.getElementById('mtitle').textContent = '新增維修';
+    document.getElementById('fid').value = '';
+    document.getElementById('bdel').style.display = 'none';
+    ['fn','fph','fmo','fcol','fimei','fit'].forEach(i => document.getElementById(i).value = '');
+    document.getElementById('fbr').value = 'apple';
+    document.getElementById('fcap').value = '';
+    document.getElementById('fst').value = 'pending';
+    document.getElementById('fpr').value = '';
+    document.getElementById('fco').value = '';
+    document.getElementById('fdt').value = today();
   } else {
-    const r = allRepairs.find(x => x.id === id);
-    if (!r) return;
-    document.getElementById('modal-title').textContent = '編輯維修';
-    document.getElementById('form-id').value = id;
-    document.getElementById('delete-btn').style.display = 'block';
-    document.getElementById('f-name').value  = r.customer_name ?? '';
-    document.getElementById('f-phone').value = r.phone ?? '';
-    document.getElementById('f-model').value = r.model ?? '';
-    document.getElementById('f-item').value  = r.repair_item ?? '';
-    document.getElementById('f-date').value  = r.repair_date ?? '';
-    document.getElementById('f-brand-form').value  = r.brand ?? 'apple';
-    document.getElementById('f-status-form').value = r.status ?? 'pending';
-    document.getElementById('f-price').value = r.price ?? '';
-    document.getElementById('f-cost').value  = r.cost ?? '';
+    const r = allData.find(x => x.id === id); if(!r) return;
+    document.getElementById('mtitle').textContent = '編輯維修';
+    document.getElementById('fid').value = id;
+    document.getElementById('bdel').style.display = 'block';
+    document.getElementById('fn').value   = r.customer_name || '';
+    document.getElementById('fph').value  = r.phone || '';
+    document.getElementById('fmo').value  = r.model || '';
+    document.getElementById('fcol').value = r.color || '';
+    document.getElementById('fcap').value = r.capacity || '';
+    document.getElementById('fimei').value= r.imei || '';
+    document.getElementById('fit').value  = r.repair_item || '';
+    document.getElementById('fdt').value  = r.repair_date || '';
+    document.getElementById('fbr').value  = r.brand || 'apple';
+    document.getElementById('fst').value  = r.status || 'pending';
+    document.getElementById('fpr').value  = r.price || '';
+    document.getElementById('fco').value  = r.cost || '';
   }
 }
-function closeForm() {
-  document.getElementById('modal').classList.remove('open');
-}
+function closeForm() { document.getElementById('modal').classList.remove('open'); }
 
-async function saveRepair() {
-  const name  = document.getElementById('f-name').value.trim();
-  const phone = document.getElementById('f-phone').value.trim();
-  if (!name || !phone) { toast('客戶名稱和電話必填', true); return; }
+async function save() {
+  const name  = document.getElementById('fn').value.trim();
+  const phone = document.getElementById('fph').value.trim();
+  const item  = document.getElementById('fit').value.trim();
+  if(!name || !phone || !item) { toast('請填寫姓名、電話及維修項目', true); return; }
+
+  const btn = document.getElementById('bsave');
+  btn.disabled = true; btn.textContent = '儲存中…';
 
   const payload = {
-    customer_name: name,
-    phone,
-    brand:       document.getElementById('f-brand-form').value,
-    model:       document.getElementById('f-model').value.trim() || null,
-    repair_item: document.getElementById('f-item').value.trim(),
-    repair_date: document.getElementById('f-date').value,
-    status:      document.getElementById('f-status-form').value,
-    price:       Number(document.getElementById('f-price').value) || 0,
-    cost:        Number(document.getElementById('f-cost').value)  || 0,
+    customer_name: name, phone,
+    brand:       document.getElementById('fbr').value,
+    model:       document.getElementById('fmo').value.trim() || null,
+    color:       document.getElementById('fcol').value.trim() || null,
+    capacity:    document.getElementById('fcap').value || null,
+    imei:        document.getElementById('fimei').value.trim() || null,
+    repair_item: item,
+    repair_date: document.getElementById('fdt').value || null,
+    status:      document.getElementById('fst').value,
+    price:       Number(document.getElementById('fpr').value) || 0,
+    cost:        Number(document.getElementById('fco').value) || 0,
     is_deleted: false,
   };
 
-  const id = document.getElementById('form-id').value;
+  const id = document.getElementById('fid').value;
   let error;
-  if (id) {
+  if(id) {
     ({ error } = await sb.from('repairs').update(payload).eq('id', id));
   } else {
     ({ error } = await sb.from('repairs').insert(payload));
   }
 
-  if (error) { toast(error.message, true); return; }
-  toast(id ? '已儲存' : '新增成功');
-  closeForm();
-  load();
+  btn.disabled = false; btn.textContent = '儲存';
+  if(error) { toast('儲存失敗：' + error.message, true); return; }
+  toast(id ? '已儲存 ✓' : '新增成功 ✓', false, true);
+  closeForm(); load();
 }
 
-async function deleteRepair() {
-  const id = document.getElementById('form-id').value;
-  if (!id || !confirm('確定要刪除此筆記錄？')) return;
+async function delRepair() {
+  const id = document.getElementById('fid').value;
+  if(!id || !confirm('確定要刪除此筆記錄？')) return;
   const { error } = await sb.from('repairs').update({ is_deleted: true }).eq('id', id);
-  if (error) { toast(error.message, true); return; }
+  if(error) { toast('刪除失敗：' + error.message, true); return; }
   toast('已刪除');
-  closeForm();
-  load();
+  closeForm(); load();
 }
 
-// ── 備份（匯出 Excel）────────────────────────────────────
+// ── 備份 ─────────────────────────────────────────────
 function backup() {
   const list = getFiltered();
-  if (!list.length) { toast('沒有資料可備份', true); return; }
+  if(!list.length) { toast('沒有資料可備份', true); return; }
   const rows = list.map(r => ({
-    客戶名稱: r.customer_name,
-    電話:     r.phone,
-    品牌:     BRAND_LABELS[r.brand] ?? r.brand,
-    型號:     r.model ?? '',
-    維修項目: r.repair_item,
-    維修日期: r.repair_date,
-    狀態:     STATUS_LABELS[r.status] ?? r.status,
-    售價:     Number(r.price),
-    成本:     Number(r.cost),
-    利潤:     Number(r.price) - Number(r.cost),
+    客戶名稱: r.customer_name, 電話: r.phone,
+    品牌: BRAND[r.brand]||r.brand, 型號: r.model||'',
+    顏色: r.color||'', 容量: r.capacity||'', IMEI: r.imei||'',
+    維修項目: r.repair_item, 維修日期: r.repair_date,
+    狀態: STATUS[r.status]||r.status,
+    售價: Number(r.price), 成本: Number(r.cost),
+    利潤: Number(r.price) - Number(r.cost),
   }));
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [12,14,10,14,18,12,10,10,10,10].map(wch => ({ wch }));
+  ws['!cols'] = [12,14,10,14,10,8,18,18,12,10,10,10,10].map(wch => ({wch}));
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, '維修備份');
   XLSX.writeFile(wb, `維修備份_${today()}.xlsx`);
   toast('備份成功！');
 }
 
-// ── 還原（匯入 Excel）────────────────────────────────────
+// ── 還原 ─────────────────────────────────────────────
 async function restore(e) {
-  const file = e.target.files[0];
-  e.target.value = '';
-  if (!file) return;
-
-  const buffer = await file.arrayBuffer();
-  const wb = XLSX.read(buffer, { type: 'array' });
-  const ws = wb.Sheets[wb.SheetNames[0]];
+  const file = e.target.files[0]; e.target.value = ''; if(!file) return;
+  const buf = await file.arrayBuffer();
+  const wb  = XLSX.read(buf, {type:'array'});
+  const ws  = wb.Sheets[wb.SheetNames[0]];
   const rows = XLSX.utils.sheet_to_json(ws);
-
   let ok = 0, fail = 0;
-  for (const row of rows) {
+  for(const row of rows) {
     const name  = String(row['客戶名稱'] ?? '').trim();
-    const phone = String(row['電話']     ?? '').trim();
+    const phone = String(row['電話'] ?? '').trim();
     const price = Number(row['售價']);
     const cost  = Number(row['成本']);
-    if (!name || !phone || isNaN(price) || isNaN(cost)) { fail++; continue; }
-
-    const brand  = BRAND_REVERSE[String(row['品牌']??'').trim()]  ?? 'other';
-    const status = STATUS_REVERSE[String(row['狀態']??'').trim()] ?? 'pending';
+    if(!name || !phone || isNaN(price) || isNaN(cost)) { fail++; continue; }
     const { error } = await sb.from('repairs').insert({
-      customer_name: name, phone, brand, status,
+      customer_name: name, phone,
+      brand:       BRAND_R[String(row['品牌']??'').trim()] || 'other',
+      status:      STATUS_R[String(row['狀態']??'').trim()] || 'pending',
       model:       String(row['型號']??'').trim() || null,
+      color:       String(row['顏色']??'').trim() || null,
+      capacity:    String(row['容量']??'').trim() || null,
+      imei:        String(row['IMEI']??'').trim() || null,
       repair_item: String(row['維修項目']??'').trim(),
-      repair_date: String(row['維修日期']??'').trim(),
+      repair_date: String(row['維修日期']??'').trim() || null,
       price, cost, is_deleted: false,
     });
     error ? fail++ : ok++;
   }
-  toast(`成功還原 ${ok} 筆，失敗 ${fail} 筆`);
+  toast(`還原 ${ok} 筆，失敗 ${fail} 筆`);
   load();
 }
 
-// ── 工具 ──────────────────────────────────────────────────
-function fmt(n) {
-  return 'NT$' + Math.round(n).toLocaleString('zh-TW');
-}
-function esc(s) {
-  return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function today() {
-  return new Date().toISOString().slice(0,10);
-}
-function toast(msg, isError=false) {
+// ── utils ─────────────────────────────────────────────
+function fmt(n)  { return 'NT$' + Math.round(n).toLocaleString('zh-TW'); }
+function esc(s)  { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function today() { return new Date().toISOString().slice(0,10); }
+function toast(msg, err=false, ok=false) {
   const el = document.createElement('div');
-  el.className = 'toast' + (isError ? ' error' : '');
+  el.className = 'toast' + (err?' err':ok?' ok':'');
   el.textContent = msg;
-  document.getElementById('toast-container').appendChild(el);
+  document.getElementById('toasts').appendChild(el);
   setTimeout(() => el.remove(), 3000);
 }
 </script>
